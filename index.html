@@ -1,0 +1,139 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saras Poli Bhaji Kendra</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react"></script>
+    <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js"></script>
+    <style>
+        body { background-color: #f0f9f0; }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { motion } = FramerMotion;
+        const { ChefHat, Lock, Edit3, Star, ExternalLink, Plus, Bot, Send } = lucide;
+
+        const INITIAL_MENU = {
+            Breakfast: [{ id: 101, name: "Misal Pav", price: 60, img: "https://images.unsplash.com/photo-1589302168068-965662d77054?w=300" }],
+            Lunch: [{ id: 201, name: "Poli Bhaji Thali", price: 120, img: "https://images.unsplash.com/photo-1626078478766-03733b8276f5?w=300" }],
+            Dinner: [{ id: 301, name: "Veg Special Thali", price: 150, img: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=300" }]
+        };
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('About Us');
+            const [menu, setMenu] = useState(() => JSON.parse(localStorage.getItem('saras_menu')) || INITIAL_MENU);
+            const [cart, setCart] = useState([]);
+            const [adminMode, setAdminMode] = useState(false);
+            const [editItem, setEditItem] = useState(null);
+            const [orderInfo, setOrderInfo] = useState({ name: "", phone: "", address: "" });
+
+            useEffect(() => localStorage.setItem('saras_menu', JSON.stringify(menu)), [menu]);
+
+            const cartTotal = cart.reduce((s, i) => s + i.price, 0);
+
+            const placeOrder = () => {
+                const msg = `Order from ${orderInfo.name} (${orderInfo.phone}) to ${orderInfo.address}: ${cart.map(i => i.name).join(', ')} - Total: ₹${cartTotal}`;
+                window.open(`https://wa.me/918108674763?text=${encodeURIComponent(msg)}`);
+            };
+
+            return (
+                <div className="min-h-screen font-sans pb-20">
+                    <nav className="bg-white shadow-lg sticky top-0 z-50 p-4 border-b-4 border-green-600">
+                        <div className="max-w-4xl mx-auto flex justify-around font-bold text-xs md:text-sm">
+                            {['About Us', 'Today’s Menu', 'AI Chef', 'My Cart'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} className={activeTab === tab ? 'text-green-700 underline' : 'text-stone-400'}>{tab}</button>
+                            ))}
+                        </div>
+                    </nav>
+
+                    <main className="max-w-4xl mx-auto p-6">
+                        {activeTab === 'About Us' && (
+                            <motion.section initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center p-8 bg-white rounded-3xl shadow-sm">
+                                <img src="https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=400" className="mx-auto w-32 h-32 rounded-full border-4 border-green-100 shadow-md mb-6" />
+                                <h1 className="text-3xl font-black text-green-800">Saras Poli Bhaji Kendra</h1>
+                                <p className="text-xl italic text-green-600 mt-2 animate-pulse">"Gharche Jevan Ata Baher Pan"</p>
+                                <p className="mt-4 text-stone-600">Authentic meals in Brahmand, Thane.</p>
+                                <a href="https://maps.app.goo.gl/XzwpYYas2pCnv5R47?g_st=ic" target="_blank" className="mt-6 inline-flex items-center gap-2 bg-yellow-500 text-white px-6 py-2 rounded-full font-bold">
+                                    <Star size={18} /> Reviews
+                                </a>
+                            </motion.section>
+                        )}
+
+                        {activeTab === 'Today’s Menu' && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <div className="bg-stone-900 text-white p-4 rounded-xl mb-6 flex items-center gap-2 text-sm italic">
+                                    <Bot className="text-green-400" /> AI Waiter: {cartTotal < 150 ? `Add ₹${150 - cartTotal} for delivery!` : 'Ready for delivery!'}
+                                </div>
+                                {Object.entries(menu).map(([cat, items]) => (
+                                    <div key={cat} className="mb-6">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="text-xl font-bold text-green-700">{cat}</h3>
+                                            {adminMode && <button onClick={() => setMenu({...menu, [cat]: [...menu[cat], {id: Date.now(), name: "New Dish", price: 0, img: "https://via.placeholder.com/150"}]})} className="bg-green-600 text-white p-2 rounded-full"><Plus size={16}/></button>}
+                                        </div>
+                                        {items.map(item => (
+                                            <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm mb-2 flex items-center gap-4">
+                                                <img src={item.img} className="w-16 h-16 rounded-lg object-cover" />
+                                                {editItem?.id === item.id ? (
+                                                    <div className="flex-1 space-y-1">
+                                                        <input className="w-full border p-1" placeholder="Name" value={editItem.name} onChange={e => setEditItem({...editItem, name: e.target.value})} />
+                                                        <input className="w-full border p-1" placeholder="Price" type="number" value={editItem.price} onChange={e => setEditItem({...editItem, price: Number(e.target.value)})} />
+                                                        <input className="w-full border p-1" placeholder="Image URL" value={editItem.img} onChange={e => setEditItem({...editItem, img: e.target.value})} />
+                                                        <button onClick={() => { setMenu({...menu, [cat]: menu[cat].map(i => i.id === item.id ? editItem : i)}); setEditItem(null); }} className="bg-green-600 text-white w-full py-1">Save Changes</button>
+                                                    </div>
+                                                ) : (
+                                                    <><div className="flex-1"><p className="font-bold">{item.name}</p><p>₹{item.price}</p></div>
+                                                    {adminMode ? <button onClick={() => setEditItem(item)}><Edit3/></button> : <button onClick={() => setCart([...cart, item])} className="bg-green-600 text-white px-4 py-2">+</button>}</>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'AI Chef' && (
+                            <section className="bg-white p-8 rounded-3xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">AI Chef</h3>
+                                <input className="w-full p-4 bg-stone-100 rounded-xl mb-4" placeholder="How to cook..." />
+                                <button className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Ask Recipe</button>
+                            </section>
+                        )}
+
+                        {activeTab === 'My Cart' && (
+                            <div className="space-y-4">
+                                <h2 className="text-2xl font-bold">Your Order</h2>
+                                {cart.map((i, idx) => <div key={idx} className="bg-white p-2 rounded">{i.name} - ₹{i.price}</div>)}
+                                <input className="w-full p-3 border rounded" placeholder="Name" onChange={e => setOrderInfo({...orderInfo, name: e.target.value})} />
+                                <input className="w-full p-3 border rounded" placeholder="Phone" onChange={e => setOrderInfo({...orderInfo, phone: e.target.value})} />
+                                <input className="w-full p-3 border rounded" placeholder="Address" onChange={e => setOrderInfo({...orderInfo, address: e.target.value})} />
+                                <button onClick={placeOrder} className="w-full bg-green-600 text-white p-3 rounded-xl font-bold flex justify-center gap-2"><Send/> Place Order</button>
+                                <button onClick={() => setAdminMode(!adminMode)} className="text-stone-300"><Lock/></button>
+                                {adminMode && <input type="password" placeholder="Admin Password" className="w-full border p-2" onChange={e => e.target.value === "SARASPOLIKENDRA2012" ? setAdminMode(true) : null}/>}
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
+```
